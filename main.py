@@ -66,7 +66,52 @@ class TrafficGraph:
 class BusRoutes:
 
     def __init__(self):
-        pass
+        # Generate 3 random cycles on the graph
+        self.routes = [self.generate_random_cycle() for _ in range(3)]
+
+    def generate_random_cycle(self):
+        start_vertex = (np.random.randint(0, 5), np.random.randint(0, 5))
+        cycle = [start_vertex]
+        banned_vertices = []
+
+        cycle = self.select_next_cycle_step(cycle, banned_vertices)
+
+        print(cycle)
+
+        return cycle
+
+    def select_next_cycle_step(self, cycle, banned_vertices):
+
+        if len(cycle) > 1 and cycle[-1] == cycle[0]:
+            return cycle
+
+        (x, y) = cycle[-1]
+        possible_moves = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+        legal_moves = []
+
+        for move in possible_moves:
+            if move not in cycle[1:] and move not in banned_vertices and move[0] in range(5) and move[1] in range(5):
+                legal_moves.append(move)
+
+        if len(legal_moves) == 0:
+            banned_vertices.append(cycle[-1])
+            return self.select_next_cycle_step(cycle[:-1], banned_vertices)
+        else:
+            next_move = legal_moves[np.random.randint(0, len(legal_moves))]
+            cycle.append(next_move)
+            banned_vertices.append(next_move)
+            return self.select_next_cycle_step(cycle, banned_vertices)
+
+    def visualise(self):
+
+        plt.plot([xy[0]+0.05 for xy in self.routes[0]], [xy[1]+0.05 for xy in self.routes[0]], 'r', alpha=0.4)
+
+        plt.plot([xy[0] for xy in self.routes[1]], [xy[1] for xy in self.routes[1]], 'g', alpha=0.4)
+
+        plt.plot([xy[0]-0.05 for xy in self.routes[2]], [xy[1]-0.05 for xy in self.routes[2]], 'b', alpha=0.4)
+
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.show()
 
     def assess_performance(self, traffic_graph):
         pass
@@ -83,10 +128,10 @@ def calculate_cost(traffic_graph, bus_routes):
 
 
 def main():
-    traffic_graph = TrafficGraph()
-    traffic_graph.visualise_traffic()
-    traffic_graph.visualise_demand()
-    population = [BusRoutes() for _ in range(100)]
+    # traffic_graph = TrafficGraph()
+    # population = [BusRoutes() for _ in range(100)]
+    routes = BusRoutes()
+    routes.visualise()
 
 
 if __name__ == '__main__':
