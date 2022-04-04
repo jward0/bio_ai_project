@@ -90,8 +90,9 @@ class BusRoutes:
         legal_moves = []
 
         for move in possible_moves:
-            if move not in cycle[1:] and move not in banned_vertices and move[0] in range(5) and move[1] in range(5):
-                legal_moves.append(move)
+            if not (move == cycle[0] and len(cycle) < 3):
+                if move not in cycle[1:] and move not in banned_vertices and move[0] in range(5) and move[1] in range(5):
+                    legal_moves.append(move)
 
         if len(legal_moves) == 0:
             banned_vertices.append(cycle[-1])
@@ -116,8 +117,87 @@ class BusRoutes:
     def assess_performance(self, traffic_graph):
         pass
 
-    def mutate(self):
-        pass
+    def mutate_and_visualise(self):
+        self.visualise()
+        while True:
+            temp_routes = [self.mutate(cycle) for cycle in self.routes]
+            if temp_routes != self.routes:
+                self.routes = temp_routes
+                break
+        self.visualise()
+
+    @staticmethod
+    def mutate(cycle):
+
+        ndx = np.random.randint(0, len(cycle) - 1)
+
+        if cycle[ndx + 1][0] != cycle[ndx - 1][0] and cycle[ndx + 1][1] != cycle[ndx - 1][1]:
+            # Invert corner
+            xy_0 = cycle[ndx - 1]
+            xy_2 = cycle[ndx + 1]
+            if cycle[ndx][0] == xy_0[0]:
+                if (xy_2[0], xy_0[1]) not in cycle:
+                    cycle[ndx] = (xy_2[0], xy_0[1])
+            else:
+                if (xy_0[0], xy_2[1]) not in cycle:
+                    cycle[ndx] = (xy_0[0], xy_2[1])
+
+            if ndx == 0:
+                cycle[-1] = cycle[0]
+            elif ndx == len(cycle)-1:
+                cycle[0] = cycle[-1]
+        else:
+            # Move edge
+            xy_0 = cycle[ndx]
+            xy_1 = cycle[ndx+1]
+            plus_flag = True
+            neg_flag = True
+            if xy_0[0] == xy_1[0]:
+                # Move in +/- y
+                # Check if vertices in +y are already in the cycle /and/ not at ndx-1, ndx+2
+                if (xy_0[0], xy_0[1]+1) in cycle and cycle[ndx-1] != (xy_0[0], xy_0[1]+1):
+                    plus_flag = False
+                elif (xy_1[0], xy_1[1]+1) in cycle and cycle[ndx+2] != (xy_1[0], xy_1[1]+1):
+                    plus_flag = False
+                # Check if vertices in -y are already in the cycle /and/ not at ndx-1, ndx+2
+                if (xy_0[0], xy_0[1]-1) in cycle and cycle[ndx-1] != (xy_0[0], xy_0[1]-1):
+                    neg_flag = False
+                elif (xy_1[0], xy_1[1]-1) in cycle and cycle[ndx+2] != (xy_1[0], xy_1[1]-1):
+                    neg_flag = False
+
+                # If both are valid mutations, choose one at random
+                if plus_flag and neg_flag:
+                    if np.random.randint(0, 2) == 0:
+                        plus_flag = False
+                    else:
+                        neg_flag = False
+
+                if plus_flag:
+                    # Move +y
+                    cycle.insert(ndx+1, (xy_1[0], xy_1[1]+1))
+                    cycle.insert(ndx+1, (xy_0[0], xy_0[1]+1))
+                elif neg_flag:
+                    # Move -y
+                    cycle.insert(ndx+1, (xy_1[0], xy_1[1]-1))
+                    cycle.insert(ndx+1, (xy_0[0], xy_0[1]-1))
+            else:
+                pass
+                # Move in +/- x
+                # Check if vertices in +x are already in the cycle /and/ not at ndx-1, ndx+2
+                # Check if vertices in -x are already in the cycle /and/ not at ndx-1, ndx+2
+
+        # Trim redundant vertices
+        """
+        for ndx, vtx in enumerate(cycle[1:]):
+            if cycle.count(vtx) > 1:
+                indices = np.where(cycle == vtx)[0]
+                for i in range(indices[-1] - indices[0]):
+                    del cycle[ndx + i]
+
+                break
+        """
+
+        return cycle
 
     def crossover(self, other_routes):
         pass
@@ -131,7 +211,7 @@ def main():
     # traffic_graph = TrafficGraph()
     # population = [BusRoutes() for _ in range(100)]
     routes = BusRoutes()
-    routes.visualise()
+    routes.mutate_and_visualise()
 
 
 if __name__ == '__main__':
