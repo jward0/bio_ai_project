@@ -14,26 +14,26 @@ class TrafficGraph:
 
         # Initialise random weights and demands on edges between adjacent vertices
         for i in range(25):
+
+            for j in range(25):
+                self.demand[0][i][j] = np.random.randint(1, 11)
+
             if i % 5 != 0:
                 self.traffic[0][i][i-1] = np.random.randint(1, 11)
-                self.demand[0][i][i-1] = np.random.randint(1, 11)
             if i % 5 != 4:
                 self.traffic[0][i][i+1] = np.random.randint(1, 11)
-                self.demand[0][i][i+1] = np.random.randint(1, 11)
             if i > 4:
                 self.traffic[0][i][i-5] = np.random.randint(1, 11)
-                self.demand[0][i][i-5] = np.random.randint(1, 11)
             if i < 20:
                 self.traffic[0][i][i+5] = np.random.randint(1, 11)
-                self.demand[0][i][i+5] = np.random.randint(1, 11)
 
         # Populate all 12 time steps with random noise added to legal values, clipped to [0, 10]
         for i in range(11):
             for j in range(25):
                 for k in range(25):
+                    self.demand[i + 1][j][k] = np.clip(self.demand[i][j][k] + np.random.randint(-2, 3), 1, 10)
                     if self.traffic[i][j][k] != np.inf:
                         self.traffic[i+1][j][k] = np.clip(self.traffic[i][j][k] + np.random.randint(-2, 3), 1, 10)
-                        self.demand[i+1][j][k] = np.clip(self.demand[i][j][k] + np.random.randint(-2, 3), 1, 10)
 
     def visualise_traffic(self):
         coords = [(i % 5, int(i/5)) for i in range(25)]
