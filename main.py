@@ -236,14 +236,37 @@ class BusRoutes:
 
 
 def calculate_cost(traffic_graph, bus_routes):
-    pass
+    # Construct graph from traffic graph and bus routes
+
+    travel_time_graph = np.ones(shape=(12, 25, 25)) * np.inf
+    shortest_distance_graph = np.ones(shape=(12, 25, 25)) * np.inf
+
+    for route in bus_routes:
+        for ndx in range(len(route) - 1):
+            j = route[ndx][0]*5 + route[ndx][1]
+            k = route[ndx+1][0]*5 + route[ndx+1][1]
+            for i in range(12):
+                travel_time_graph[i][j][k] = traffic_graph.traffic[i][j][k]
+
+    # Apply Floyd-Warshall to find shortest distances and apply to demand graph to find cost
+
+    total_cost = 0
+
+    for i in range(12):
+        shortest_distance_graph[i] = floyd_warshall(travel_time_graph[i])
+        total_cost += np.sum(np.multiply(shortest_distance_graph[i], traffic_graph.demand[i]))
+
+    print(f"Total cost: {total_cost}")
+
+    return total_cost
 
 
 def main():
-    # traffic_graph = TrafficGraph()
+    traffic_graph = TrafficGraph()
     # population = [BusRoutes() for _ in range(100)]
     routes = BusRoutes()
     routes.mutate_and_visualise()
+    calculate_cost(traffic_graph, routes.routes)
 
 
 if __name__ == '__main__':
