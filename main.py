@@ -91,7 +91,7 @@ class BusRoutes:
 
         for move in possible_moves:
             if not (move == cycle[0] and len(cycle) < 3):
-                if move not in cycle[1:] and move not in banned_vertices and move in np.ndindex((5, 5)):
+                if move not in cycle[1:] and move not in banned_vertices and move in np.ndindex(5, 5):
                     legal_moves.append(move)
 
         if len(legal_moves) == 0:
@@ -119,13 +119,6 @@ class BusRoutes:
 
     def mutate_and_visualise(self):
         self.visualise()
-        """
-        while True:
-            temp_routes = [self.mutate(cycle) for cycle in self.routes]
-            if temp_routes != self.routes:
-                self.routes = temp_routes
-                break
-        """
         self.routes = [self.mutate(cycle) for cycle in self.routes]
         self.visualise()
 
@@ -136,23 +129,17 @@ class BusRoutes:
 
         if cycle[ndx + 1][0] != cycle[ndx - 1][0] and cycle[ndx + 1][1] != cycle[ndx - 1][1] and len(cycle) > 5:
             # Invert corner
-            print(f"Inverting corner at {cycle[ndx]}")
             xy_0 = cycle[ndx - 1]
             xy_2 = cycle[ndx + 1]
             if cycle[ndx][0] == xy_0[0]:
                 point = (xy_2[0], xy_0[1])
                 if not (point in cycle and not(point == cycle[ndx-2] or point == cycle[ndx+2])):
-                    # if (xy_2[0], xy_0[1]) not in cycle:
                     cycle[ndx] = (xy_2[0], xy_0[1])
-                else:
-                    print("Inversion failed")
+
             else:
                 point = (xy_0[0], xy_2[1])
                 if not (point in cycle and not (point == cycle[ndx - 2] or point == cycle[ndx + 2])):
-                    # if (xy_0[0], xy_2[1]) not in cycle:
                     cycle[ndx] = (xy_0[0], xy_2[1])
-                else:
-                    print("Inversion failed")
 
             if ndx == 0:
                 cycle[-1] = cycle[0]
@@ -164,23 +151,17 @@ class BusRoutes:
             xy_1 = cycle[ndx+1]
             plus_flag = True
             neg_flag = True
-            print(f"Edge found: {xy_0}, {xy_1}")
             if xy_0[1] == xy_1[1]:
-                print("Moving edge in y")
                 # Move in +/- y
                 # Check if vertices in +y are already in the cycle /and/ not at ndx-1, ndx+2
                 if (xy_0[0], xy_0[1]+1) in cycle and (cycle[ndx-1] != (xy_0[0], xy_0[1]+1) or len(cycle) == 5):
-                    print("a")
                     plus_flag = False
                 elif (xy_1[0], xy_1[1]+1) in cycle and (cycle[ndx+2] != (xy_1[0], xy_1[1]+1) or len(cycle) == 5):
-                    print("b")
                     plus_flag = False
                 # Check if vertices in -y are already in the cycle /and/ not at ndx-1, ndx+2
                 if (xy_0[0], xy_0[1]-1) in cycle and (cycle[ndx-1] != (xy_0[0], xy_0[1]-1) or len(cycle) == 5):
-                    print("c")
                     neg_flag = False
                 elif (xy_1[0], xy_1[1]-1) in cycle and (cycle[ndx+2] != (xy_1[0], xy_1[1]-1) or len(cycle) == 5):
-                    print("d")
                     neg_flag = False
 
                 # If both are valid mutations, choose one at random
@@ -202,21 +183,15 @@ class BusRoutes:
                     cycle.insert(ndx+1, (xy_0[0], xy_0[1]-1))
             else:
                 # Move in +/- x
-                print("Moving edge in x")
                 # Check if vertices in +x are already in the cycle /and/ not at ndx-1, ndx+2
-                # Check if vertices in -x are already in the cycle /and/ not at ndx-1, ndx+2
                 if (xy_0[0]+1, xy_0[1]) in cycle and (cycle[ndx-1] != (xy_0[0]+1, xy_0[1]) or len(cycle) == 5):
-                    print("a")
                     plus_flag = False
                 elif (xy_1[0]+1, xy_1[1]) in cycle and (cycle[ndx+2] != (xy_1[0]+1, xy_1[1]) or len(cycle) == 5):
-                    print("b")
                     plus_flag = False
                 # Check if vertices in -x are already in the cycle /and/ not at ndx-1, ndx+2
                 if (xy_0[0]-1, xy_0[1]) in cycle and (cycle[ndx-1] != (xy_0[0]-1, xy_0[1]) or len(cycle) == 5):
-                    print("c")
                     neg_flag = False
                 elif (xy_1[0]-1, xy_1[1]) in cycle and (cycle[ndx+2] != (xy_1[0]-1, xy_1[1]) or len(cycle) == 5):
-                    print("d")
                     neg_flag = False
 
                 # If both are valid mutations, choose one at random
@@ -228,12 +203,10 @@ class BusRoutes:
 
                 if plus_flag:
                     # Move +x
-                    print("+x")
                     cycle.insert(ndx+1, (xy_1[0]+1, xy_1[1]))
                     cycle.insert(ndx+1, (xy_0[0]+1, xy_0[1]))
                 elif neg_flag:
                     # Move -x
-                    print("-x")
                     cycle.insert(ndx+1, (xy_1[0]-1, xy_1[1]))
                     cycle.insert(ndx+1, (xy_0[0]-1, xy_0[1]))
 
