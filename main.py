@@ -91,7 +91,7 @@ class BusRoutes:
 
         for move in possible_moves:
             if not (move == cycle[0] and len(cycle) < 3):
-                if move not in cycle[1:] and move not in banned_vertices and move[0] in range(5) and move[1] in range(5):
+                if move not in cycle[1:] and move not in banned_vertices and move in np.ndindex((5, 5)):
                     legal_moves.append(move)
 
         if len(legal_moves) == 0:
@@ -119,28 +119,40 @@ class BusRoutes:
 
     def mutate_and_visualise(self):
         self.visualise()
+        """
         while True:
             temp_routes = [self.mutate(cycle) for cycle in self.routes]
             if temp_routes != self.routes:
                 self.routes = temp_routes
                 break
+        """
+        self.routes = [self.mutate(cycle) for cycle in self.routes]
         self.visualise()
 
     @staticmethod
     def mutate(cycle):
 
-        ndx = np.random.randint(0, len(cycle) - 1)
+        ndx = np.random.randint(0, len(cycle) - 2)
 
-        if cycle[ndx + 1][0] != cycle[ndx - 1][0] and cycle[ndx + 1][1] != cycle[ndx - 1][1]:
+        if cycle[ndx + 1][0] != cycle[ndx - 1][0] and cycle[ndx + 1][1] != cycle[ndx - 1][1] and len(cycle) > 5:
             # Invert corner
+            print(f"Inverting corner at {cycle[ndx]}")
             xy_0 = cycle[ndx - 1]
             xy_2 = cycle[ndx + 1]
             if cycle[ndx][0] == xy_0[0]:
-                if (xy_2[0], xy_0[1]) not in cycle:
+                point = (xy_2[0], xy_0[1])
+                if not (point in cycle and not(point == cycle[ndx-2] or point == cycle[ndx+2])):
+                    # if (xy_2[0], xy_0[1]) not in cycle:
                     cycle[ndx] = (xy_2[0], xy_0[1])
+                else:
+                    print("Inversion failed")
             else:
-                if (xy_0[0], xy_2[1]) not in cycle:
+                point = (xy_0[0], xy_2[1])
+                if not (point in cycle and not (point == cycle[ndx - 2] or point == cycle[ndx + 2])):
+                    # if (xy_0[0], xy_2[1]) not in cycle:
                     cycle[ndx] = (xy_0[0], xy_2[1])
+                else:
+                    print("Inversion failed")
 
             if ndx == 0:
                 cycle[-1] = cycle[0]
@@ -152,17 +164,23 @@ class BusRoutes:
             xy_1 = cycle[ndx+1]
             plus_flag = True
             neg_flag = True
-            if xy_0[0] == xy_1[0]:
+            print(f"Edge found: {xy_0}, {xy_1}")
+            if xy_0[1] == xy_1[1]:
+                print("Moving edge in y")
                 # Move in +/- y
                 # Check if vertices in +y are already in the cycle /and/ not at ndx-1, ndx+2
-                if (xy_0[0], xy_0[1]+1) in cycle and cycle[ndx-1] != (xy_0[0], xy_0[1]+1):
+                if (xy_0[0], xy_0[1]+1) in cycle and (cycle[ndx-1] != (xy_0[0], xy_0[1]+1) or len(cycle) == 5):
+                    print("a")
                     plus_flag = False
-                elif (xy_1[0], xy_1[1]+1) in cycle and cycle[ndx+2] != (xy_1[0], xy_1[1]+1):
+                elif (xy_1[0], xy_1[1]+1) in cycle and (cycle[ndx+2] != (xy_1[0], xy_1[1]+1) or len(cycle) == 5):
+                    print("b")
                     plus_flag = False
                 # Check if vertices in -y are already in the cycle /and/ not at ndx-1, ndx+2
-                if (xy_0[0], xy_0[1]-1) in cycle and cycle[ndx-1] != (xy_0[0], xy_0[1]-1):
+                if (xy_0[0], xy_0[1]-1) in cycle and (cycle[ndx-1] != (xy_0[0], xy_0[1]-1) or len(cycle) == 5):
+                    print("c")
                     neg_flag = False
-                elif (xy_1[0], xy_1[1]-1) in cycle and cycle[ndx+2] != (xy_1[0], xy_1[1]-1):
+                elif (xy_1[0], xy_1[1]-1) in cycle and (cycle[ndx+2] != (xy_1[0], xy_1[1]-1) or len(cycle) == 5):
+                    print("d")
                     neg_flag = False
 
                 # If both are valid mutations, choose one at random
@@ -174,28 +192,69 @@ class BusRoutes:
 
                 if plus_flag:
                     # Move +y
+                    print("+y")
                     cycle.insert(ndx+1, (xy_1[0], xy_1[1]+1))
                     cycle.insert(ndx+1, (xy_0[0], xy_0[1]+1))
                 elif neg_flag:
                     # Move -y
+                    print("-y")
                     cycle.insert(ndx+1, (xy_1[0], xy_1[1]-1))
                     cycle.insert(ndx+1, (xy_0[0], xy_0[1]-1))
             else:
-                pass
                 # Move in +/- x
+                print("Moving edge in x")
                 # Check if vertices in +x are already in the cycle /and/ not at ndx-1, ndx+2
                 # Check if vertices in -x are already in the cycle /and/ not at ndx-1, ndx+2
+                if (xy_0[0]+1, xy_0[1]) in cycle and (cycle[ndx-1] != (xy_0[0]+1, xy_0[1]) or len(cycle) == 5):
+                    print("a")
+                    plus_flag = False
+                elif (xy_1[0]+1, xy_1[1]) in cycle and (cycle[ndx+2] != (xy_1[0]+1, xy_1[1]) or len(cycle) == 5):
+                    print("b")
+                    plus_flag = False
+                # Check if vertices in -x are already in the cycle /and/ not at ndx-1, ndx+2
+                if (xy_0[0]-1, xy_0[1]) in cycle and (cycle[ndx-1] != (xy_0[0]-1, xy_0[1]) or len(cycle) == 5):
+                    print("c")
+                    neg_flag = False
+                elif (xy_1[0]-1, xy_1[1]) in cycle and (cycle[ndx+2] != (xy_1[0]-1, xy_1[1]) or len(cycle) == 5):
+                    print("d")
+                    neg_flag = False
+
+                # If both are valid mutations, choose one at random
+                if plus_flag and neg_flag:
+                    if np.random.randint(0, 2) == 0:
+                        plus_flag = False
+                    else:
+                        neg_flag = False
+
+                if plus_flag:
+                    # Move +x
+                    print("+x")
+                    cycle.insert(ndx+1, (xy_1[0]+1, xy_1[1]))
+                    cycle.insert(ndx+1, (xy_0[0]+1, xy_0[1]))
+                elif neg_flag:
+                    # Move -x
+                    print("-x")
+                    cycle.insert(ndx+1, (xy_1[0]-1, xy_1[1]))
+                    cycle.insert(ndx+1, (xy_0[0]-1, xy_0[1]))
 
         # Trim redundant vertices
-        """
-        for ndx, vtx in enumerate(cycle[1:]):
-            if cycle.count(vtx) > 1:
-                indices = np.where(cycle == vtx)[0]
-                for i in range(indices[-1] - indices[0]):
-                    del cycle[ndx + i]
 
-                break
-        """
+        unq, count = np.unique(cycle[1:], axis=0, return_counts=True)
+        repeated_vertex = np.squeeze(unq[count > 1])
+
+        if repeated_vertex.any():
+            try:
+                indices = np.where(np.all(np.array(cycle[1:]) == repeated_vertex, axis=1))
+                for ndx in reversed(range(indices[0][0], indices[0][1])):
+                    del cycle[ndx + 1]
+            except np.AxisError:
+                print("Failed")
+                print(np.array(cycle[1:]))
+                print(repeated_vertex)
+
+        # Trim outside of bounds
+
+        cycle = [vtx for vtx in cycle if 0 <= vtx[0] <= 4 and 0 <= vtx[1] <= 4]
 
         return cycle
 
