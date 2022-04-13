@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.sparse.csgraph import floyd_warshall
+import copy
 
 
 class TrafficGraph:
@@ -35,6 +36,7 @@ class TrafficGraph:
                     if self.traffic[i][j][k] != np.inf:
                         self.traffic[i+1][j][k] = np.clip(self.traffic[i][j][k] + np.random.randint(-2, 3), 1, 10)
 
+
     def visualise_traffic(self):
         coords = [(i % 5, int(i/5)) for i in range(25)]
 
@@ -68,6 +70,7 @@ class BusRoutes:
     def __init__(self):
         # Generate 3 random cycles on the graph
         self.routes = [self.generate_random_cycle() for _ in range(3)]
+        self.cost = np.inf
 
     def generate_random_cycle(self):
         start_vertex = (np.random.randint(0, 5), np.random.randint(0, 5))
@@ -75,8 +78,6 @@ class BusRoutes:
         banned_vertices = []
 
         cycle = self.select_next_cycle_step(cycle, banned_vertices)
-
-        print(cycle)
 
         return cycle
 
@@ -121,6 +122,9 @@ class BusRoutes:
         self.visualise()
         self.routes = [self.mutate(cycle) for cycle in self.routes]
         self.visualise()
+
+    def mutate_all(self):
+        self.routes = [self.mutate(cycle) for cycle in self.routes]
 
     @staticmethod
     def mutate(cycle):
@@ -173,12 +177,10 @@ class BusRoutes:
 
                 if plus_flag:
                     # Move +y
-                    print("+y")
                     cycle.insert(ndx+1, (xy_1[0], xy_1[1]+1))
                     cycle.insert(ndx+1, (xy_0[0], xy_0[1]+1))
                 elif neg_flag:
                     # Move -y
-                    print("-y")
                     cycle.insert(ndx+1, (xy_1[0], xy_1[1]-1))
                     cycle.insert(ndx+1, (xy_0[0], xy_0[1]-1))
             else:
@@ -231,8 +233,15 @@ class BusRoutes:
 
         return cycle
 
-    def crossover(self, other_routes):
-        pass
+
+def crossover(routes_1, routes_2):
+    n = np.random.randint(0, 3)
+    r1 = copy.deepcopy(routes_1)
+    r2 = copy.deepcopy(routes_2)
+
+    r1.routes[n], r2.routes[n] = r2.routes[n], r1.routes[n]
+
+    return r1, r2
 
 
 def calculate_cost(traffic_graph, bus_routes):
@@ -241,7 +250,7 @@ def calculate_cost(traffic_graph, bus_routes):
     travel_time_graph = np.ones(shape=(12, 25, 25)) * np.inf
     shortest_distance_graph = np.ones(shape=(12, 25, 25)) * np.inf
 
-    for route in bus_routes:
+    for route in bus_routes.routes:
         for ndx in range(len(route) - 1):
             j = route[ndx][0]*5 + route[ndx][1]
             k = route[ndx+1][0]*5 + route[ndx+1][1]
@@ -252,21 +261,66 @@ def calculate_cost(traffic_graph, bus_routes):
 
     total_cost = 0
 
-    for i in range(12):
+    for i in range(1):
         shortest_distance_graph[i] = floyd_warshall(travel_time_graph[i])
         total_cost += np.sum(np.multiply(shortest_distance_graph[i], traffic_graph.demand[i]))
-
-    print(f"Total cost: {total_cost}")
 
     return total_cost
 
 
+def iterate_ga(traffic_graph, original_population):
+
+    # Calculate costs and cull invalid solutions
+
+    for routes in original_population:
+        routes.cost = calculate_cost(traffic_graph, routes)
+
+    population = [routes for routes in original_population if routes.cost != np.inf]
+
+    # Select top 50% of performers to pass forward
+    population.sort(key=lambda x: x.cost)
+    # print(f"Valid members: {len(population)}")
+    # print([item.cost for item in population])
+    print(f"Best generational performance:{population[0].cost}")
+    population = population[:int(len(population)/2)]
+    # print(f"Kept {len(population)} members with costs {population[0].cost} - {population[-1].cost}")
+    # print([item.cost for item in population])
+
+    new_population = []
+
+    # Crossover- randomly until 1000 members
+    for i in range(500):
+        p_ndx = np.random.randint(0, len(population))
+        q_ndx = np.random.randint(0, len(population))
+        p = population[p_ndx]
+        q = population[q_ndx]
+        # print(f"foo {p_ndx}, {p.cost} {q_ndx}, {q.cost}")
+        a, b = crossover(p, q)
+        # a.cost = calculate_cost(traffic_graph, a)
+        # b.cost = calculate_cost(traffic_graph, b)
+        # print(f"bar {a.cost} {b.cost}")
+        new_population.append(a)
+        new_population.append(b)
+
+    # Mutate
+    for routes in new_population:
+        if np.random.randint(0, 10) > 4:
+            routes.mutate_all()
+
+    return new_population
+
+
 def main():
     traffic_graph = TrafficGraph()
-    # population = [BusRoutes() for _ in range(100)]
-    routes = BusRoutes()
-    routes.mutate_and_visualise()
-    calculate_cost(traffic_graph, routes.routes)
+    population = [BusRoutes() for _ in range(1000)]
+
+    for i in range(100):
+        print(f"Generation {i}")
+        population = iterate_ga(traffic_graph, population)
+
+    # routes = BusRoutes()
+    # routes.mutate_and_visualise()
+    # calculate_cost(traffic_graph, routes.routes)
 
 
 if __name__ == '__main__':
