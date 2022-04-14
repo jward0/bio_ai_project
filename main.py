@@ -36,6 +36,25 @@ class TrafficGraph:
                     if self.traffic[i][j][k] != np.inf:
                         self.traffic[i+1][j][k] = np.clip(self.traffic[i][j][k] + np.random.randint(-2, 3), 1, 10)
 
+    def visualise_single(self):
+        coords = [(i % 5, int(i / 5)) for i in range(25)]
+
+        fig, axs = plt.subplots(1, 2)
+
+        for j in range(25):
+            for k in range(25):
+                if self.traffic[0][j][k] != np.inf:
+                    axs[0].plot([coords[j][0], coords[k][0]], [coords[j][1], coords[k][1]],
+                                   'r', linewidth=self.traffic[0][j][k])
+                axs[1].plot([coords[j][0], coords[k][0]], [coords[j][1], coords[k][1]],
+                               'g', alpha=0.1, linewidth=self.demand[0][j][k])
+
+        # axs[0].gca().set_aspect('equal', adjustable='box')
+        axs[0].title.set_text("Traffic (travel time between vertices)")
+        # axs[1].gca().set_aspect('equal', adjustable='box')
+        axs[1].title.set_text("Demand")
+
+        plt.show()
 
     def visualise_traffic(self):
         coords = [(i % 5, int(i/5)) for i in range(25)]
@@ -113,6 +132,7 @@ class BusRoutes:
         plt.plot([xy[0]-0.05 for xy in self.routes[2]], [xy[1]-0.05 for xy in self.routes[2]], 'b', alpha=0.4)
 
         plt.gca().set_aspect('equal', adjustable='box')
+        plt.title("Evolved bus routes")
         plt.show()
 
     def assess_performance(self, traffic_graph):
@@ -281,7 +301,10 @@ def iterate_ga(traffic_graph, original_population):
     population.sort(key=lambda x: x.cost)
     # print(f"Valid members: {len(population)}")
     # print([item.cost for item in population])
-    print(f"Best generational performance:{population[0].cost}")
+    print(f"Best generational performance: {population[0].cost}")
+    mean_cost = sum(a.cost for a in population)/len(population)
+    print(f"Mean generational performance: {mean_cost}")
+    print(f"Valid member %: {len(population)/10}")
     population = population[:int(len(population)/2)]
     # print(f"Kept {len(population)} members with costs {population[0].cost} - {population[-1].cost}")
     # print([item.cost for item in population])
@@ -314,9 +337,18 @@ def main():
     traffic_graph = TrafficGraph()
     population = [BusRoutes() for _ in range(1000)]
 
-    for i in range(100):
+    traffic_graph.visualise_single()
+    best_cost = np.inf
+    best_routes = BusRoutes()
+
+    for i in range(30):
         print(f"Generation {i}")
         population = iterate_ga(traffic_graph, population)
+        if population[0].cost < best_cost:
+            best_cost = population[0].cost
+            best_routes = population[0]
+
+    best_routes.visualise()
 
     # routes = BusRoutes()
     # routes.mutate_and_visualise()
